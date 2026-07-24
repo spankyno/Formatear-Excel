@@ -1,5 +1,5 @@
-import React from 'react'
-import { FileSpreadsheet, RefreshCw, Eye, Wand2 } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { FileSpreadsheet, RefreshCw, Eye, Wand2, Info } from 'lucide-react'
 import { useAppStore } from './store/useAppStore'
 import { FileUpload } from './components/FileUpload'
 import { PreviewTable } from './components/PreviewTable'
@@ -8,10 +8,34 @@ import { ColumnTypeEditor } from './components/ColumnTypeEditor'
 import { StyleCanvas } from './components/StyleCanvas'
 import { GenerateButton } from './components/GenerateButton'
 import { Stepper } from './components/Stepper'
+import { AboutPage } from './components/AboutPage'
+import { Footer } from './components/Footer'
 import { Card, CardBody, CardHeader, CardTitle } from './components/ui/Card'
 import { Button } from './components/ui/Button'
 
-function Header() {
+const ABOUT_HASH = '#/acerca-de'
+
+function useHashRoute() {
+  const [isAbout, setIsAbout] = useState(() => window.location.hash === ABOUT_HASH)
+
+  useEffect(() => {
+    const onHashChange = () => setIsAbout(window.location.hash === ABOUT_HASH)
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  const goToAbout = () => {
+    window.location.hash = ABOUT_HASH
+  }
+  const goBack = () => {
+    window.history.pushState('', document.title, window.location.pathname + window.location.search)
+    setIsAbout(false)
+  }
+
+  return { isAbout, goToAbout, goBack }
+}
+
+function Header({ onNavigateAbout }: { onNavigateAbout: () => void }) {
   const step = useAppStore((s) => s.step)
   const reset = useAppStore((s) => s.reset)
   return (
@@ -23,13 +47,16 @@ function Header() {
         <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Formatear Excel</span>
       </div>
       <Stepper current={step} />
-      {step !== 'upload' ? (
-        <Button variant="ghost" size="sm" onClick={reset}>
-          <RefreshCw size={13} /> Nuevo archivo
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="sm" onClick={onNavigateAbout}>
+          <Info size={13} /> Acerca de
         </Button>
-      ) : (
-        <div className="w-[110px]" />
-      )}
+        {step !== 'upload' && (
+          <Button variant="ghost" size="sm" onClick={reset}>
+            <RefreshCw size={13} /> Nuevo archivo
+          </Button>
+        )}
+      </div>
     </header>
   )
 }
@@ -93,11 +120,15 @@ function WorkspaceView() {
 
 export default function App() {
   const step = useAppStore((s) => s.step)
+  const { isAbout, goToAbout, goBack } = useHashRoute()
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      {step === 'upload' ? <FileUpload /> : <WorkspaceView />}
+    <div className="flex min-h-screen flex-col">
+      <Header onNavigateAbout={goToAbout} />
+      <main className="flex-1">
+        {isAbout ? <AboutPage onBack={goBack} /> : step === 'upload' ? <FileUpload /> : <WorkspaceView />}
+      </main>
+      <Footer onNavigateAbout={goToAbout} />
     </div>
   )
 }

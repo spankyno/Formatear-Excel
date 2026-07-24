@@ -18,16 +18,11 @@ export function Switch({ checked, onChange, label, disabled }: SwitchProps) {
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          'relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200',
-          checked ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-700'
+          'flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200',
+          checked ? 'bg-brand-600 justify-end' : 'bg-slate-300 dark:bg-slate-700 justify-start'
         )}
       >
-        <span
-          className={cn(
-            'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200',
-            checked ? 'translate-x-4' : 'translate-x-0.5'
-          )}
-        />
+        <span className="block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200" />
       </button>
       {label && <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>}
     </label>
