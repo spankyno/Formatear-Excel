@@ -10,6 +10,7 @@ import { GenerateButton } from './components/GenerateButton'
 import { Stepper } from './components/Stepper'
 import { AboutPage } from './components/AboutPage'
 import { Footer } from './components/Footer'
+import { DataCleaningPanel } from './components/DataCleaningPanel'
 import { Card, CardBody, CardHeader, CardTitle } from './components/ui/Card'
 import { Button } from './components/ui/Button'
 
@@ -74,6 +75,7 @@ function WorkspaceView() {
     <div className="mx-auto grid max-w-[1500px] grid-cols-1 gap-5 p-6 lg:grid-cols-[1.15fr_0.85fr]">
       {/* Panel izquierdo: preview */}
       <div className="space-y-4">
+        <DataCleaningPanel />
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2">

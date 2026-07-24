@@ -2,19 +2,25 @@ import { create } from 'zustand'
 import type { ColumnMeta, GenerationOptions, ThemeConfig, WorkbookData } from '../lib/types'
 import { PRESET_THEMES } from '../lib/themes'
 import { loadCustomThemes } from '../lib/styleLibrary'
+import { buildWorkbookFromRaw, type RawWorkbook } from '../lib/fileParser'
+import { DEFAULT_CLEANING_OPTIONS, type CleaningOptions, type CleaningSummary } from '../lib/dataCleaner'
 
 export type Step = 'upload' | 'style' | 'done'
 
 interface AppState {
   step: Step
+  rawWorkbook: RawWorkbook | null
   workbook: WorkbookData | null
+  cleaningOptions: CleaningOptions
+  cleaningSummaries: CleaningSummary[]
   theme: ThemeConfig
   customThemes: ThemeConfig[]
   options: GenerationOptions
   isGenerating: boolean
   error: string | null
 
-  setWorkbook: (wb: WorkbookData) => void
+  ingestFile: (raw: RawWorkbook) => void
+  setCleaningOptions: (patch: Partial<CleaningOptions>) => void
   setActiveSheet: (index: number) => void
   toggleSheetSelected: (index: number) => void
   updateColumn: (sheetIndex: number, colKey: string, patch: Partial<ColumnMeta>) => void
@@ -37,14 +43,47 @@ const defaultOptions: GenerationOptions = {
 
 export const useAppStore = create<AppState>((set, get) => ({
   step: 'upload',
+  rawWorkbook: null,
   workbook: null,
+  cleaningOptions: DEFAULT_CLEANING_OPTIONS,
+  cleaningSummaries: [],
   theme: PRESET_THEMES[0],
   customThemes: loadCustomThemes(),
   options: defaultOptions,
   isGenerating: false,
   error: null,
 
-  setWorkbook: (wb) => set({ workbook: wb, step: 'style', error: null }),
+  ingestFile: (raw) => {
+    const { workbook, summaries } = buildWorkbookFromRaw(raw, DEFAULT_CLEANING_OPTIONS)
+    set({
+      rawWorkbook: raw,
+      workbook,
+      cleaningOptions: DEFAULT_CLEANING_OPTIONS,
+      cleaningSummaries: summaries,
+      step: 'style',
+      error: null,
+    })
+  },
+
+  setCleaningOptions: (patch) => {
+    const state = get()
+    if (!state.rawWorkbook) return
+    const nextOptions = { ...state.cleaningOptions, ...patch }
+    const { workbook, summaries } = buildWorkbookFromRaw(state.rawWorkbook, nextOptions)
+
+    // Conservar selección de hojas activa y hojas incluidas/excluidas si coinciden por nombre
+    const prevByName = new Map(state.workbook?.sheets.map((s) => [s.name, s.selected]) ?? [])
+    workbook.sheets = workbook.sheets.map((s) => ({
+      ...s,
+      selected: prevByName.has(s.name) ? prevByName.get(s.name)! : s.selected,
+    }))
+    workbook.activeSheetIndex = Math.min(
+      state.workbook?.activeSheetIndex ?? 0,
+      workbook.sheets.length - 1
+    )
+
+    set({ cleaningOptions: nextOptions, workbook, cleaningSummaries: summaries })
+  },
 
   setActiveSheet: (index) =>
     set((state) => (state.workbook ? { workbook: { ...state.workbook, activeSheetIndex: index } } : {})),
@@ -79,7 +118,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   setGenerating: (v) => set({ isGenerating: v }),
   setError: (msg) => set({ error: msg }),
 
-  reset: () => set({ step: 'upload', workbook: null, error: null }),
+  reset: () =>
+    set({
+      step: 'upload',
+      rawWorkbook: null,
+      workbook: null,
+      cleaningOptions: DEFAULT_CLEANING_OPTIONS,
+      cleaningSummaries: [],
+      error: null,
+    }),
 }))
 
 export function allThemes(): ThemeConfig[] {

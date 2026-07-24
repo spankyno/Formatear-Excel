@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { FileSpreadsheet, UploadCloud, Loader2 } from 'lucide-react'
-import { parseFile } from '../lib/fileParser'
+import { parseFileRaw } from '../lib/fileParser'
 import { useAppStore } from '../store/useAppStore'
 import { Card } from './ui/Card'
 import { cn } from '../lib/cn'
@@ -9,7 +9,7 @@ export function FileUpload() {
   const [isDragging, setIsDragging] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const setWorkbook = useAppStore((s) => s.setWorkbook)
+  const ingestFile = useAppStore((s) => s.ingestFile)
   const setError = useAppStore((s) => s.setError)
   const error = useAppStore((s) => s.error)
 
@@ -24,8 +24,8 @@ export function FileUpload() {
       setIsLoading(true)
       setError(null)
       try {
-        const wb = await parseFile(file)
-        setWorkbook(wb)
+        const raw = await parseFileRaw(file)
+        ingestFile(raw)
       } catch (e) {
         console.error(e)
         setError('No se pudo leer el archivo. Verifica que no esté dañado o protegido.')
@@ -33,7 +33,7 @@ export function FileUpload() {
         setIsLoading(false)
       }
     },
-    [setWorkbook, setError]
+    [ingestFile, setError]
   )
 
   return (
