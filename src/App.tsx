@@ -72,18 +72,18 @@ function WorkspaceView() {
   const activeSheet = workbook.sheets[workbook.activeSheetIndex]
 
   return (
-    <div className="mx-auto grid max-w-[1500px] grid-cols-1 gap-5 p-6 lg:grid-cols-[1.15fr_0.85fr]">
+    <div className="mx-auto grid max-w-[1500px] grid-cols-1 gap-5 p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
       {/* Panel izquierdo: preview */}
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <DataCleaningPanel />
-        <Card>
+        <Card className="min-w-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2">
               <Eye size={14} /> Vista previa en vivo
             </CardTitle>
             <span className="text-[11px] text-slate-400">{workbook.fileName}</span>
           </CardHeader>
-          <CardBody className="space-y-3">
+          <CardBody className="min-w-0 space-y-3">
             <SheetSelector />
             <PreviewTable sheet={activeSheet} theme={theme} styled showTotals={options.insertTotals} />
           </CardBody>
@@ -100,7 +100,7 @@ function WorkspaceView() {
       </div>
 
       {/* Panel derecho: style canvas */}
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <StyleCanvas />
         <Card className="sticky bottom-4">
           <CardBody className="space-y-3">
@@ -125,7 +125,7 @@ export default function App() {
   const { isAbout, goToAbout, goBack } = useHashRoute()
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <Header onNavigateAbout={goToAbout} />
       <main className="flex-1">
         {isAbout ? <AboutPage onBack={goBack} /> : step === 'upload' ? <FileUpload /> : <WorkspaceView />}

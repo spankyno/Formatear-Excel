@@ -141,7 +141,7 @@ export function PreviewTable({ sheet, theme, styled = false, maxRows = 30, showT
   const borderWidth = styled && theme?.borderStyle !== 'none' ? 1 : 1
 
   return (
-    <div className="overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 max-h-[62vh] scrollbar-thin">
+    <div className="w-full overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 max-h-[62vh] scrollbar-thin">
       <table className="excel-table">
         <thead className="sticky top-0 z-10">
           <tr>
