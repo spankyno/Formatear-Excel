@@ -7,12 +7,16 @@ export function Footer({ onNavigateAbout }: { onNavigateAbout: () => void }) {
       <div className="mx-auto flex max-w-[1500px] flex-col items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400 sm:flex-row">
         <p>Aitor Sánchez Gutiérrez © 2026 - Reservados todos los derechos</p>
         <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-          <button
-            onClick={onNavigateAbout}
+          <a
+            href="/acerca-de"
+            onClick={(e) => {
+              e.preventDefault()
+              onNavigateAbout()
+            }}
             className="flex items-center gap-1.5 transition-colors hover:text-brand-600 dark:hover:text-brand-400"
           >
             <Info size={13} /> Acerca de
-          </button>
+          </a>
           <a
             href="https://aitor-blog-contacto.vercel.app/"
             target="_blank"

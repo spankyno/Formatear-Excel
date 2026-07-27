@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://formatear-excel.kbo1.workers.dev/sitemap.xml

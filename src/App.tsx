@@ -14,22 +14,31 @@ import { DataCleaningPanel } from './components/DataCleaningPanel'
 import { Card, CardBody, CardHeader, CardTitle } from './components/ui/Card'
 import { Button } from './components/ui/Button'
 
-const ABOUT_HASH = '#/acerca-de'
+const ABOUT_PATH = '/acerca-de'
+const TITLES = {
+  app: 'Formatear Excel — Convierte CSV/Excel en reportes ejecutivos profesionales',
+  about: 'Acerca de Formatear Excel — Cómo funciona y stack tecnológico',
+}
 
-function useHashRoute() {
-  const [isAbout, setIsAbout] = useState(() => window.location.hash === ABOUT_HASH)
+function usePathRoute() {
+  const [isAbout, setIsAbout] = useState(() => window.location.pathname === ABOUT_PATH)
 
   useEffect(() => {
-    const onHashChange = () => setIsAbout(window.location.hash === ABOUT_HASH)
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
+    document.title = isAbout ? TITLES.about : TITLES.app
+  }, [isAbout])
+
+  useEffect(() => {
+    const onPopState = () => setIsAbout(window.location.pathname === ABOUT_PATH)
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   const goToAbout = () => {
-    window.location.hash = ABOUT_HASH
+    window.history.pushState({}, '', ABOUT_PATH)
+    setIsAbout(true)
   }
   const goBack = () => {
-    window.history.pushState('', document.title, window.location.pathname + window.location.search)
+    window.history.pushState({}, '', '/')
     setIsAbout(false)
   }
 
@@ -49,9 +58,16 @@ function Header({ onNavigateAbout }: { onNavigateAbout: () => void }) {
       </div>
       <Stepper current={step} />
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="sm" onClick={onNavigateAbout}>
+        <a
+          href="/acerca-de"
+          onClick={(e) => {
+            e.preventDefault()
+            onNavigateAbout()
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
           <Info size={13} /> Acerca de
-        </Button>
+        </a>
         {step !== 'upload' && (
           <Button variant="ghost" size="sm" onClick={reset}>
             <RefreshCw size={13} /> Nuevo archivo
@@ -122,7 +138,7 @@ function WorkspaceView() {
 
 export default function App() {
   const step = useAppStore((s) => s.step)
-  const { isAbout, goToAbout, goBack } = useHashRoute()
+  const { isAbout, goToAbout, goBack } = usePathRoute()
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">

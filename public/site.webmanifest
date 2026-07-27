@@ -1,0 +1,16 @@
+{
+  "name": "Formatear Excel",
+  "short_name": "Formatear Excel",
+  "description": "Convierte CSV o Excel plano en reportes ejecutivos profesionales, 100% en tu navegador.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#3762f7",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
