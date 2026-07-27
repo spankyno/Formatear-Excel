@@ -2,6 +2,53 @@ import React, { useMemo } from 'react'
 import type { ColumnMeta, SheetData, ThemeConfig } from '../lib/types'
 import { parseNumericValue, parseDateValue } from '../lib/typeDetector'
 
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.substring(0, 2), 16)
+  const g = parseInt(clean.substring(2, 4), 16)
+  const b = parseInt(clean.substring(4, 6), 16)
+  return [r, g, b]
+}
+
+function interpolateHex(hexA: string, hexB: string, t: number): string {
+  const [r1, g1, b1] = hexToRgb(hexA)
+  const [r2, g2, b2] = hexToRgb(hexB)
+  const r = Math.round(r1 + (r2 - r1) * t)
+  const g = Math.round(g1 + (g2 - g1) * t)
+  const b = Math.round(b1 + (b2 - b1) * t)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+/** Réplica de la escala de 3 colores por defecto de Excel: rojo (bajo) → amarillo (medio) → verde (alto). */
+function colorScaleColor(t: number): string {
+  if (t <= 0.5) return interpolateHex('#F8696B', '#FFEB84', t / 0.5)
+  return interpolateHex('#FFEB84', '#63BE7B', (t - 0.5) / 0.5)
+}
+
+function getConditionalStyle(
+  col: ColumnMeta,
+  raw: unknown,
+  range: { min: number; max: number } | undefined,
+  accentColor: string | undefined
+): React.CSSProperties {
+  if (!range || !col.conditionalFormat || col.conditionalFormat === 'none') return {}
+  const value = parseNumericValue(raw)
+  if (value === null || range.max === range.min) return {}
+  const t = Math.max(0, Math.min(1, (value - range.min) / (range.max - range.min)))
+
+  if (col.conditionalFormat === 'colorScale') {
+    return { backgroundColor: colorScaleColor(t), color: '#1f2937' }
+  }
+  if (col.conditionalFormat === 'dataBar') {
+    const pct = Math.round(t * 100)
+    const barColor = accentColor ?? '#3762f7'
+    return {
+      background: `linear-gradient(90deg, ${barColor}66 0%, ${barColor}66 ${pct}%, transparent ${pct}%, transparent 100%)`,
+    }
+  }
+  return {}
+}
+
 function formatCellValue(raw: unknown, col: ColumnMeta): string {
   if (raw === null || raw === undefined || raw === '') return ''
   switch (col.dataType) {
@@ -50,6 +97,19 @@ interface PreviewTableProps {
 
 export function PreviewTable({ sheet, theme, styled = false, maxRows = 30, showTotals = false }: PreviewTableProps) {
   const rows = useMemo(() => sheet.rows.slice(0, maxRows), [sheet.rows, maxRows])
+
+  const numericRanges = useMemo(() => {
+    const ranges: Record<string, { min: number; max: number }> = {}
+    sheet.columns.forEach((col) => {
+      if (!col.conditionalFormat || col.conditionalFormat === 'none') return
+      const values = sheet.rows
+        .map((r) => parseNumericValue(r[col.key]))
+        .filter((v): v is number => v !== null)
+      if (values.length === 0) return
+      ranges[col.key] = { min: Math.min(...values), max: Math.max(...values) }
+    })
+    return ranges
+  }, [sheet])
 
   const totals = useMemo(() => {
     if (!showTotals) return null
@@ -117,6 +177,7 @@ export function PreviewTable({ sheet, theme, styled = false, maxRows = 30, showT
                       fontSize: styled ? theme?.bodyFontSize : undefined,
                       textAlign:
                         styled && theme?.globalAlignment !== 'auto' ? (theme?.globalAlignment as any) : col.alignment,
+                      ...getConditionalStyle(col, row[col.key], numericRanges[col.key], theme?.accentColor),
                     }}
                     className="px-3 py-1.5"
                   >

@@ -10,6 +10,8 @@ export type Alignment = 'left' | 'center' | 'right'
 
 export type AggregationType = 'sum' | 'average' | 'count' | 'none'
 
+export type ConditionalFormatType = 'none' | 'colorScale' | 'dataBar'
+
 export interface ColumnMeta {
   key: string
   originalName: string
@@ -20,6 +22,7 @@ export interface ColumnMeta {
   currencySymbol?: '$' | '€' | '£'
   dateFormat?: 'dd/mm/yyyy' | 'yyyy-mm-dd' | 'mm/dd/yyyy'
   width?: number
+  conditionalFormat?: ConditionalFormatType
 }
 
 export interface SheetData {
@@ -64,4 +67,21 @@ export interface GenerationOptions {
   applyFormats: boolean
   insertTotals: boolean
   mode: 'once' | 'template'
+}
+
+/** Estructuras crudas compartidas entre el hilo principal y los Web Workers (sin depender de xlsx/ExcelJS). */
+export interface MergeRange {
+  s: { r: number; c: number }
+  e: { r: number; c: number }
+}
+
+export interface RawSheet {
+  name: string
+  aoa: unknown[][]
+  merges: MergeRange[]
+}
+
+export interface RawWorkbook {
+  fileName: string
+  rawSheets: RawSheet[]
 }

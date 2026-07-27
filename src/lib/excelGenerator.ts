@@ -1,5 +1,4 @@
 import ExcelJS from 'exceljs'
-import { saveAs } from 'file-saver'
 import type { ColumnMeta, GenerationOptions, SheetData, ThemeConfig } from './types'
 import { parseDateValue, parseNumericValue } from './typeDetector'
 
@@ -96,12 +95,57 @@ function colLetter(index: number): string {
   return s
 }
 
-function applySheet(
-  workbook: ExcelJS.Workbook,
-  sheet: SheetData,
-  theme: ThemeConfig,
-  options: GenerationOptions
+const NUMERIC_TYPES = new Set<ColumnMeta['dataType']>(['integer', 'decimal', 'currency', 'percentage'])
+
+/** Aplica formato condicional real de Excel (escala de color o barra de datos) por columna. */
+function applyConditionalFormatting(
+  ws: ExcelJS.Worksheet,
+  columns: ColumnMeta[],
+  lastDataRowNumber: number,
+  theme: ThemeConfig
 ) {
+  if (lastDataRowNumber < 2) return
+  let priority = 1
+
+  columns.forEach((col, idx) => {
+    if (!col.conditionalFormat || col.conditionalFormat === 'none') return
+    if (!NUMERIC_TYPES.has(col.dataType)) return
+
+    const letter = colLetter(idx)
+    const ref = `${letter}2:${letter}${lastDataRowNumber}`
+
+    if (col.conditionalFormat === 'colorScale') {
+      ws.addConditionalFormatting({
+        ref,
+        rules: [
+          {
+            type: 'colorScale',
+            priority: priority++,
+            cfvo: [{ type: 'min' }, { type: 'percentile', value: 50 }, { type: 'max' }],
+            color: [{ argb: 'FFF8696B' }, { argb: 'FFFFEB84' }, { argb: 'FF63BE7B' }],
+          },
+        ],
+      })
+    } else if (col.conditionalFormat === 'dataBar') {
+      ws.addConditionalFormatting({
+        ref,
+        rules: [
+          {
+            type: 'dataBar',
+            priority: priority++,
+            gradient: true,
+            minLength: 0,
+            maxLength: 100,
+            cfvo: [{ type: 'min' }, { type: 'max' }],
+            color: { argb: hexToArgb(theme.accentColor) },
+          } as unknown as ExcelJS.DataBarRuleType,
+        ],
+      })
+    }
+  })
+}
+
+function applySheet(workbook: ExcelJS.Workbook, sheet: SheetData, theme: ThemeConfig, options: GenerationOptions) {
   const ws = workbook.addWorksheet(sheet.name.slice(0, 31) || 'Hoja', {
     views: [{ state: 'frozen', ySplit: 1 }],
   })
@@ -206,15 +250,17 @@ function applySheet(
       from: { row: 1, column: 1 },
       to: { row: 1, column: columns.length },
     }
+    applyConditionalFormatting(ws, columns, lastDataRowNumber, theme)
   }
 }
 
-export async function generateWorkbook(
+/** Genera el libro final y devuelve su contenido como ArrayBuffer (pensado para ejecutarse dentro de un Web Worker). */
+export async function buildWorkbookBuffer(
   sheets: SheetData[],
   theme: ThemeConfig,
   options: GenerationOptions,
   fileName: string
-): Promise<void> {
+): Promise<{ buffer: ArrayBuffer; outputName: string }> {
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'Formatear Excel'
   workbook.created = new Date()
@@ -224,10 +270,10 @@ export async function generateWorkbook(
     applySheet(workbook, sheet, theme, options)
   }
 
-  const buffer = await workbook.xlsx.writeBuffer()
-  const blob = new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  })
+  const raw = await workbook.xlsx.writeBuffer()
+  const uint8 = raw instanceof Uint8Array ? raw : new Uint8Array(raw as ArrayBuffer)
+  const arrayBuffer = uint8.buffer.slice(uint8.byteOffset, uint8.byteOffset + uint8.byteLength) as ArrayBuffer
+
   const base = fileName.replace(/\.(csv|xlsx|xls)$/i, '')
-  saveAs(blob, `${base}_reporte_ejecutivo.xlsx`)
+  return { buffer: arrayBuffer, outputName: `${base}_reporte_ejecutivo.xlsx` }
 }

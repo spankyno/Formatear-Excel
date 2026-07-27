@@ -1,7 +1,6 @@
-export interface MergeRange {
-  s: { r: number; c: number }
-  e: { r: number; c: number }
-}
+import type { MergeRange } from './types'
+
+export type { MergeRange }
 
 export interface CleaningOptions {
   trimSpaces: boolean

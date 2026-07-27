@@ -1,7 +1,16 @@
 import React from 'react'
 import { useAppStore } from '../store/useAppStore'
-import type { ColumnDataType, Alignment, AggregationType } from '../lib/types'
+import type { ColumnDataType, Alignment, AggregationType, ConditionalFormatType } from '../lib/types'
 import { InfoTooltip } from './ui/Tooltip'
+import { Palette } from 'lucide-react'
+
+const NUMERIC_TYPES: ColumnDataType[] = ['integer', 'decimal', 'currency', 'percentage']
+
+const CF_OPTIONS: { value: ConditionalFormatType; label: string }[] = [
+  { value: 'none', label: 'Ninguno' },
+  { value: 'colorScale', label: 'Escala de color' },
+  { value: 'dataBar', label: 'Barra de datos' },
+]
 
 const TYPE_OPTIONS: { value: ColumnDataType; label: string }[] = [
   { value: 'text', label: 'Texto' },
@@ -117,6 +126,25 @@ export function ColumnTypeEditor() {
                     {fmt}
                   </button>
                 ))}
+              </div>
+            )}
+            {NUMERIC_TYPES.includes(col.dataType) && (
+              <div className="col-span-12 flex items-center gap-1.5 pt-0.5">
+                <Palette size={11} className="shrink-0 text-slate-400" />
+                {CF_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    onClick={() => updateColumn(sheetIndex, col.key, { conditionalFormat: o.value })}
+                    className={`rounded-md border px-2 py-0.5 text-[11px] ${
+                      (col.conditionalFormat ?? 'none') === o.value
+                        ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950/30'
+                        : 'border-slate-200 text-slate-500 dark:border-slate-700'
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+                <InfoTooltip text="Se aplica como formato condicional real de Excel (recalculable si editas los datos), además de mostrarse en la vista previa." />
               </div>
             )}
           </div>

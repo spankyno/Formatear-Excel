@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Sparkles, Eraser } from 'lucide-react'
+import { Sparkles, Eraser, Loader2 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { Card, CardBody, CardHeader, CardTitle } from './ui/Card'
 import { Switch } from './ui/Switch'
@@ -68,6 +68,7 @@ export function DataCleaningPanel() {
   const cleaningOptions = useAppStore((s) => s.cleaningOptions)
   const setCleaningOptions = useAppStore((s) => s.setCleaningOptions)
   const cleaningSummaries = useAppStore((s) => s.cleaningSummaries)
+  const isProcessing = useAppStore((s) => s.isProcessing)
 
   const total = useMemo(() => sumSummaries(cleaningSummaries), [cleaningSummaries])
 
@@ -82,10 +83,15 @@ export function DataCleaningPanel() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="flex items-center gap-2">
           <Sparkles size={14} /> Limpieza inteligente de datos
         </CardTitle>
+        {isProcessing && (
+          <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <Loader2 size={12} className="animate-spin" /> Procesando…
+          </span>
+        )}
       </CardHeader>
       <CardBody className="space-y-3">
         <div className="grid gap-2.5 sm:grid-cols-2">
@@ -100,6 +106,7 @@ export function DataCleaningPanel() {
               </span>
               <Switch
                 checked={cleaningOptions[t.key]}
+                disabled={isProcessing}
                 onChange={(v) => setCleaningOptions({ [t.key]: v })}
               />
             </div>

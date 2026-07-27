@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { FileSpreadsheet, UploadCloud, Loader2 } from 'lucide-react'
-import { parseFileRaw } from '../lib/fileParser'
+import { parseFileInWorker } from '../lib/workerClient'
 import { useAppStore } from '../store/useAppStore'
 import { Card } from './ui/Card'
 import { cn } from '../lib/cn'
@@ -24,8 +24,8 @@ export function FileUpload() {
       setIsLoading(true)
       setError(null)
       try {
-        const raw = await parseFileRaw(file)
-        ingestFile(raw)
+        const raw = await parseFileInWorker(file)
+        await ingestFile(raw)
       } catch (e) {
         console.error(e)
         setError('No se pudo leer el archivo. Verifica que no esté dañado o protegido.')

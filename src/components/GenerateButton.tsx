@@ -1,8 +1,9 @@
 import React from 'react'
 import confetti from 'canvas-confetti'
+import { saveAs } from 'file-saver'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
-import { generateWorkbook } from '../lib/excelGenerator'
+import { generateWorkbookInWorker } from '../lib/workerClient'
 import { Button } from './ui/Button'
 
 function fireConfetti() {
@@ -48,7 +49,11 @@ export function GenerateButton() {
     setGenerating(true)
     setError(null)
     try {
-      await generateWorkbook(workbook.sheets, theme, options, workbook.fileName)
+      const { buffer, outputName } = await generateWorkbookInWorker(workbook.sheets, theme, options, workbook.fileName)
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      saveAs(blob, outputName)
       fireConfetti()
     } catch (e) {
       console.error(e)
